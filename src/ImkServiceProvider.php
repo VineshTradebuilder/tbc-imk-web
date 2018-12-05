@@ -24,7 +24,6 @@ class ImkServiceProvider {
         $this->api_user = $user;
         return $this;
     }
-    
 
     function setApiGroup($group) {
         $this->api_group = $group;
@@ -35,7 +34,7 @@ class ImkServiceProvider {
         if (empty($this->api_url)) {
             throw new Exception("IMK API URI is required.");
         }
-        
+
         if (empty($this->api_user)) {
             throw new Exception("IMK API User is required.");
         }
@@ -47,6 +46,12 @@ class ImkServiceProvider {
         $this->client = new Client([
             "base_uri" => $this->api_url
         ]);
+
+        return $this;
+    }
+
+    function getClient() {
+        return $this->client;
     }
 
     function getBlogs($params = []) {
@@ -57,7 +62,7 @@ class ImkServiceProvider {
 
         $blogurl = "api/v1/posts/" . $this->api_user . "/" . $this->api_group . $queryStr;
 
-        return $this->client->request('GET', $blogurl, [], ['withSuccess' => true]);
+        return $this->client->request('GET', $blogurl);
     }
 
     function getRecentPosts() {
