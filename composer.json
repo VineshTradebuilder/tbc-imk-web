@@ -1,5 +1,5 @@
 {
-    "name": "tbc/imk",
+    "name": "tbc/imk/web",
     "type": "library",
     "require": {
         "php": ">=5.6"
