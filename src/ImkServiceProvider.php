@@ -9,6 +9,7 @@ class ImkServiceProvider {
     private $api_user;
     private $api_group;
     private $client;
+    private $google_key;
 
     function setApiUrl($url) {
         $this->api_url = $url;
@@ -27,6 +28,11 @@ class ImkServiceProvider {
 
     function setApiGroup($group) {
         $this->api_group = $group;
+        return $this;
+    }
+    
+    function setApiGoogleKey($key) {
+        $this->google_key = $key;
         return $this;
     }
 
@@ -145,10 +151,10 @@ class ImkServiceProvider {
 
         $data['filter'] = $filters;
 
-        return $this->client->request('POST', 'api/getAll/properties', ['json' => $data]);
+        return $this->client->request('POST', 'api/getAll/properties', ['json' => $data], ['withSuccess'=>true] );
     }
-
-    function comingSoon($filters) {
+        
+    function getComingSoon($filters = []) {
         $data['userId'] = $this->api_user;
         $data['orgId'] = $this->api_group;
         $data['type'] = 'photo';
@@ -297,7 +303,7 @@ class ImkServiceProvider {
             $config = [
                 'address' => $city,
                 'sensor' => false,
-                'key' => Config::get('google/key')
+                'key' => $this->google_key
             ];
 
             $queryStr = '';
