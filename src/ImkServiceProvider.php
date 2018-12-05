@@ -1,7 +1,7 @@
 <?php
 
 namespace TBC\IMK\WEB;
-
+use Exception;
 class ImkServiceProvider {
 
     private $api_url;
@@ -67,7 +67,11 @@ class ImkServiceProvider {
 
     function getRecentPosts() {
         $fp = $this->client->request('GET', "api/v1/posts/recent/" . $this->api_user . "/" . $this->api_group);
-        return $fp->posts;
+        if( isset( $fp->posts ) ){
+            return $fp->posts;
+        }else {
+            return [];
+        }
     }
 
     function getCategories() {

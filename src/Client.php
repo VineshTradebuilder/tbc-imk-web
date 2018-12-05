@@ -1,6 +1,6 @@
 <?php
 namespace TBC\IMK\WEB;
-
+use Exception;
 class Client {
     private $base_uri = "";
     private $timeout = 30;
@@ -41,6 +41,8 @@ class Client {
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
             $result = curl_exec($ch);
+//            print_r($result);
+            
             curl_close($ch);
             if ($result) {
                 if (isset($options['raw']) && $options['raw'] == true) {
@@ -70,5 +72,4 @@ class Client {
             return [];
         }
     }
-
 }
