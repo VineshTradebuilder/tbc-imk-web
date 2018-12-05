@@ -7,8 +7,7 @@ use Countable;
 use Exception;
 use InvalidArgumentException;
 
-class BladeRenderer
-{   /** @var array All of the registered extensions. */
+class BladeRenderer {   /** @var array All of the registered extensions. */
     protected $extensions = array();
     /** @var array All of the finished, captured sections. */
     protected $sections = array();
