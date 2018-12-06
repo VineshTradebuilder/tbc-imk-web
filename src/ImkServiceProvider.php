@@ -119,8 +119,8 @@ class ImkServiceProvider {
         return $this->client->request('POST', 'api/getFeaturedProperties', ['form_params' => $data]);
     }
 
-    function getAgents() {
-        $data = ["fetchFor" => "agent", "orgId" => $this->api_group, "userId" => $this->api_user];
+    function getAgents( $fetchFor = 'agent' ) {
+        $data = ["fetchFor" => $fetchFor, "orgId" => $this->api_group, "userId" => $this->api_user];
         return $this->client->request('post', "api/readMembers", ['form_params' => $data], ['withSuccess' => true]);
     }
 
