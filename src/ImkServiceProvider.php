@@ -1,7 +1,9 @@
 <?php
 
 namespace TBC\IMK\WEB;
+
 use Exception;
+
 class ImkServiceProvider {
 
     private $api_url;
@@ -30,7 +32,7 @@ class ImkServiceProvider {
         $this->api_group = $group;
         return $this;
     }
-    
+
     function setApiGoogleKey($key) {
         $this->google_key = $key;
         return $this;
@@ -56,6 +58,22 @@ class ImkServiceProvider {
         return $this;
     }
 
+    function getAgentsMyListing() {
+        try {
+            $params = [
+                "orgId" => $this->group,
+                "userId" => $this->user
+            ];
+
+            $url = '/api/getAgentsMyListing';
+            return $this->client->request(
+                            'POST', $url, ['form_params' => $params]
+            );
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+
     function getClient() {
         return $this->client;
     }
@@ -73,9 +91,9 @@ class ImkServiceProvider {
 
     function getRecentPosts() {
         $fp = $this->client->request('GET', "api/v1/posts/recent/" . $this->api_user . "/" . $this->api_group);
-        if( isset( $fp->posts ) ){
+        if (isset($fp->posts)) {
             return $fp->posts;
-        }else {
+        } else {
             return [];
         }
     }
@@ -120,20 +138,11 @@ class ImkServiceProvider {
         );
     }
 
-    function getAgent($license) {
+    function getAgentByLicense($license) {
         try {
-            $url = 'https://prod.imkloud.com/api/getAgentInfo/' . $license;
-            $fp = $this->client->request('GET', $url);
-            if ($body = $fp->getBody()) {
-                return json_decode($body);
-            }
-        } catch (ClientException $e) {
-            return [];
-        } catch (RequestException $e) {
-
-            return [];
-        } catch (TransferException $e) {
-
+            $url = 'api/getAgentInfo/' . $license . '?userOrgId=' . $this->api_group;
+            return $this->client->request('GET', $url, [], ['withSuccess' => true]);
+        } catch (Exception $e) {
             return [];
         }
     }
@@ -150,10 +159,18 @@ class ImkServiceProvider {
         }
 
         $data['filter'] = $filters;
-
-        return $this->client->request('POST', 'api/getAll/properties', ['json' => $data], ['withSuccess'=>true] );
+        return $this->client->request('POST', 'api/getAll/properties', ['json' => $data], ['withSuccess' => true]);
     }
-        
+
+    function getOpenHouseData($mlsId) {
+        $params = [
+            "listingId" => $mlsId,
+            "orgId" => $this->api_group,
+            "userId" => $this->api_user
+        ];
+        return $this->client->request('POST', 'api/openHomes', ['json' => $params], ['withSuccess' => true]);
+    }
+
     function getComingSoon($filters = []) {
         $data['userId'] = $this->api_user;
         $data['orgId'] = $this->api_group;
@@ -435,6 +452,20 @@ class ImkServiceProvider {
             return $data;
         } catch (Exception $e) {
             return $e->getMessage();
+        }
+    }
+
+    function getNMediaKit($params = null) {
+        try {
+            $queryStr = '';
+            if (count($params)) {
+                $queryStr = "?" . http_build_query($params);
+            }
+
+            $mediaUrl = "api/v1/market-reports/" . $this->user . "/" . $this->group . $queryStr;
+            return $this->client->request('GET', $mediaUrl, [], ['withSuccess' => true]);
+        } catch (Exception $e) {
+            return [];
         }
     }
 
