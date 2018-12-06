@@ -146,6 +146,32 @@ class ImkServiceProvider {
             return [];
         }
     }
+    
+    function getMyListingProperties($filters) {
+        $data['userId'] = $this->user;
+        $data['orgId'] = $this->group;
+        $data['type'] = 'photo';
+        $data['limit'] = $this->limit;
+        $data['originatingSystemName'] = 'myListings';
+        if (isset($filters['currentPage'])) {
+            $data['skip'] = ($filters['currentPage'] - 1 ) * $this->limit;
+        } else {
+            $data['skip'] = 0;
+        }
+
+        $data['filter'] = $filters;
+        if (isset($data['filter']['propertySubType']) && isset($data['filter']['propertySubType'][0]) && empty($data['filter']['propertySubType'][0])) {
+            unset($data['filter']['propertySubType']);
+        }
+
+        if (isset($data['filter']['userId']) && isset($data['filter']['userId'][0]) && empty($data['filter']['userId'][0])) {
+            unset($data['filter']['userId']);
+        }
+
+        return $this->client->request(
+                'POST', 'api/getAllMyListings/properties', ['json' => $data], ['withSuccess' => true]
+        );
+    }
 
     function getProperties($filters) {
         $data['userId'] = $this->api_user;
