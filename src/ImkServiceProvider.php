@@ -3,6 +3,7 @@
 namespace TBC\IMK\WEB;
 
 use Exception;
+use TBC\IMK\WEB\Input;
 
 class ImkServiceProvider {
 
@@ -12,6 +13,10 @@ class ImkServiceProvider {
     private $api_group;
     private $client;
     private $google_key;
+    private $ws_key;
+    private $weather_key;
+    private $great_school_url = 'http://api.greatschools.org/schools';
+    private $great_school_key;
 
     function setApiUrl($url) {
         $this->api_url = $url;
@@ -37,7 +42,21 @@ class ImkServiceProvider {
         $this->google_key = $key;
         return $this;
     }
+    
+    function setApiWSKey($key) {
+        $this->ws_key = $key;
+        return $this;
+    }
 
+    function setApiWeatherKey( $key ){
+        $this->weather_key = $key;
+        return $this;
+    }
+    function setApiGreatSchoolKey( $key ){
+        $this->great_school_key = $key;
+        return $this;
+    }
+    
     function init() {
         if (empty($this->api_url)) {
             throw new Exception("IMK API URI is required.");
@@ -281,7 +300,7 @@ class ImkServiceProvider {
             $street = explode(",", $street);
             $street = reset($street);
             $config = [
-                "key" => Config::get('great_school/key'),
+                "key" => $this->great_school_key,
                 "limit" => 10,
                 'address' => $street,
                 'city' => $city,
@@ -290,7 +309,7 @@ class ImkServiceProvider {
                 "schoolType" => "public-private"
             ];
 
-            $url = Config::get('great_school/url') . '/nearby?' . http_build_query($config);
+            $url = $this->great_school_url . '/nearby?' . http_build_query($config);
 
             $data = $this->client->request("GET", $url, [], ["raw" => true]);
 
@@ -301,6 +320,7 @@ class ImkServiceProvider {
             }
         } catch (Exception $e) {
             print_r($e->getMessage());
+            return [];
         }
     }
 
@@ -330,6 +350,7 @@ class ImkServiceProvider {
             }
         } catch (Exception $e) {
             print_r($e->getMessage());
+            return [];
         }
     }
 
@@ -394,10 +415,9 @@ class ImkServiceProvider {
             print_r($e->getMessage());
         }
     }
-
-    function walkScore($address, $lat, $lng) {
+    
+    private function walkScore($address, $lat, $lng) {
         try {
-
             $config = [
                 'format' => 'json',
                 'address' => $address,
@@ -405,7 +425,7 @@ class ImkServiceProvider {
                 'lon' => $lng,
                 'transit' => 1,
                 'bike' => 1,
-                'wsapikey' => Config::get('ws/key')
+                'wsapikey' => $this->ws_key
             ];
 
             $queryStr = '';
@@ -414,10 +434,10 @@ class ImkServiceProvider {
             }
 
             $url = 'http://api.walkscore.com/score' . $queryStr;
-            $data = $this->client->request("Get", $url);
+            $data = $this->client->request("Get", $url, [], ['raw' => true ]);
             return $data;
         } catch (Exception $e) {
-            print_r($e->getMessage());
+            return [] ;
         }
     }
 
@@ -432,7 +452,7 @@ class ImkServiceProvider {
             $config = [
                 'units' => 'metric',
                 'cnt' => 7,
-                'APPID' => Config::get('weather/key')
+                'APPID' => $this->weather_key
             ];
 
             if (isset($address['address'])) {
@@ -507,9 +527,50 @@ class ImkServiceProvider {
             return $this->yelp_request($search_path);
         } catch (Exception $e) {
             print_r($e->getMessage());
+            return [];
+        }
+    }
+    
+    function getWiki(){
+        $walkScore = $this->walkScore(Input::get('full_address'), Input::get('location')['lat'], Input::get('location')['lng']);
+        if($walkScore){
+            return json_encode($walkScore);
+        }else{
+            Helper::setHeader(400);
+            return json_encode(["success"=>"false"]);
         }
     }
 
+    function getSchools(){
+        $schools = $this->greatSchool(Input::get('full_address'), Input::get('city'), Input::get('state') );
+   
+        if($schools){
+            return json_encode($schools);
+        }else{
+            Helper::setHeader(400);
+            return json_encode(["success"=>"false"]);
+        }
+    }
+
+    function getNearBy(){
+        $nearBy = $this->yelp_search( Input::get('term') , Input::get('full_address') );
+        if($nearBy){
+            return json_encode($nearBy);
+        }else{
+            Helper::setHeader(400);
+            return json_encode(["success"=>"false"]);
+        }
+    }
+
+    function getWalkScore(){
+        $walkScore = $this->walkScore( Input::get('full_address') , Input::get('lat'), Input::get('lng') );
+        if($walkScore){
+            return ($walkScore);
+        }else{
+            Helper::setHeader(400);
+            return json_encode(["success"=>"false"]);
+        }
+    }
 }
 
 ?>

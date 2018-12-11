@@ -18,8 +18,12 @@ class Client {
 
     function request($method = 'get', $url, $params = [], $options = []) {
         try {
-
-            $ch = curl_init($this->base_uri . $url);
+            $parsed_url = parse_url($url);
+            if( !isset( $parsed_url['scheme'] ) ){
+                $url = $this->base_uri . $url;
+            }
+            
+            $ch = curl_init( $url );
             $headers = array();
             $data_string = '';
             if (strtolower($method) == 'post') {
@@ -41,7 +45,6 @@ class Client {
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
             $result = curl_exec($ch);
-//            print_r($result);
             
             curl_close($ch);
             if ($result) {
@@ -49,7 +52,6 @@ class Client {
                     return $result;
                 } else {
                     if ($output = json_decode($result)) {
-
                         if (isset($options['withSuccess']) && $options['withSuccess'] == true) {
                             return $output;
                         } else {
@@ -66,8 +68,6 @@ class Client {
             } else {
                 return [];
             }
-
-            return;
         } catch (Exception $e) {
             return [];
         }
