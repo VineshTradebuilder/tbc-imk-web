@@ -210,7 +210,7 @@ class ImkServiceProvider {
         }
 
         $data['filter'] = $filters;
-        return $this->client->request('POST', 'api/getUpcomingProperties', ['json' => $data]);
+        return $this->client->request('POST', 'api/getUpcomingProperties', ['json' => $data], ['withSuccess' => true]);
     }
 
     function getSingleProperty($pId, $mlsId) {
