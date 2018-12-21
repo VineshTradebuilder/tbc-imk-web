@@ -17,6 +17,12 @@ class ImkServiceProvider {
     private $weather_key;
     private $great_school_url = 'http://api.greatschools.org/schools';
     private $great_school_key;
+    private $yelp_key;
+
+    function setApiYelpKey($key) {
+        $this->yelp_key = $key;
+        return $this;
+    }
 
     function setApiUrl($url) {
         $this->api_url = $url;
@@ -42,21 +48,22 @@ class ImkServiceProvider {
         $this->google_key = $key;
         return $this;
     }
-    
+
     function setApiWSKey($key) {
         $this->ws_key = $key;
         return $this;
     }
 
-    function setApiWeatherKey( $key ){
+    function setApiWeatherKey($key) {
         $this->weather_key = $key;
         return $this;
     }
-    function setApiGreatSchoolKey( $key ){
+
+    function setApiGreatSchoolKey($key) {
         $this->great_school_key = $key;
         return $this;
     }
-    
+
     function init() {
         if (empty($this->api_url)) {
             throw new Exception("IMK API URI is required.");
@@ -138,7 +145,7 @@ class ImkServiceProvider {
         return $this->client->request('POST', 'api/getFeaturedProperties', ['form_params' => $data]);
     }
 
-    function getAgents( $fetchFor = 'agent' ) {
+    function getAgents($fetchFor = 'agent') {
         $data = ["fetchFor" => $fetchFor, "orgId" => $this->api_group, "userId" => $this->api_user];
         return $this->client->request('post', "api/readMembers", ['form_params' => $data], ['withSuccess' => true]);
     }
@@ -165,7 +172,7 @@ class ImkServiceProvider {
             return [];
         }
     }
-    
+
     function getMyListingProperties($filters) {
         $data['userId'] = $this->user;
         $data['orgId'] = $this->group;
@@ -188,7 +195,7 @@ class ImkServiceProvider {
         }
 
         return $this->client->request(
-                'POST', 'api/getAllMyListings/properties', ['json' => $data], ['withSuccess' => true]
+                        'POST', 'api/getAllMyListings/properties', ['json' => $data], ['withSuccess' => true]
         );
     }
 
@@ -315,12 +322,15 @@ class ImkServiceProvider {
 
             $arryaData = (array) simplexml_load_string($data);
 
+            if (isset($arryaData['faultString'])) {
+                throw new Exception(json_encode($arryaData));
+            }
+
             if ($arryaData) {
                 return $arryaData['school'];
             }
         } catch (Exception $e) {
-            print_r($e->getMessage());
-            return [];
+            throw $e;
         }
     }
 
@@ -377,11 +387,10 @@ class ImkServiceProvider {
 
             $url = "https://maps.googleapis.com/maps/api/geocode/json" . $queryStr;
 
-            $data = $this->client->request("Get", $url);
-
+            $data = $this->client->request("Get", $url, [], ["raw" => true]);
+            $data = json_decode($data);
             $address = [];
             if (Helper::input($data, 'status') == 'OK' && Helper::input($data, 'results') && isset($data->results[0])) {
-
                 foreach ($data->results[0]->address_components as $address_component) {
                     if (Helper::input($address_component, 'types') && isset($address_component->types[0])) {
                         if (in_array($address_component->types[0], $fields)) {
@@ -415,7 +424,7 @@ class ImkServiceProvider {
             print_r($e->getMessage());
         }
     }
-    
+
     private function walkScore($address, $lat, $lng) {
         try {
             $config = [
@@ -434,10 +443,10 @@ class ImkServiceProvider {
             }
 
             $url = 'http://api.walkscore.com/score' . $queryStr;
-            $data = $this->client->request("Get", $url, [], ['raw' => true ]);
+            $data = $this->client->request("Get", $url, [], ['raw' => true]);
             return $data;
         } catch (Exception $e) {
-            return [] ;
+            return [];
         }
     }
 
@@ -480,27 +489,6 @@ class ImkServiceProvider {
         }
     }
 
-    private function yelp_request($address) {
-        try {
-            $unsigned_url = Config::get('yelp/API_HOST') . $address;
-            $token = new OAuthToken(Config::get('yelp/TOKEN'), Config::get('yelp/TOKEN_SECRET'));
-            $consumer = new OAuthConsumer(Config::get('yelp/CONSUMER_KEY'), Config::get('yelp/CONSUMER_SECRET'));
-            $signature_method = new OAuthSignatureMethod_HMAC_SHA1();
-            $oauthrequest = OAuthRequest::from_consumer_and_token($consumer, $token, 'GET', $unsigned_url);
-
-            // Sign the request
-            $oauthrequest->sign_request($signature_method, $consumer, $token);
-
-            // Get the signed URL
-            $signed_url = $oauthrequest->to_url();
-
-            $data = $this->client->request("Get", $signed_url);
-            return $data;
-        } catch (Exception $e) {
-            return $e->getMessage();
-        }
-    }
-
     function getNMediaKit($params = null) {
         try {
             $queryStr = '';
@@ -515,13 +503,27 @@ class ImkServiceProvider {
         }
     }
 
+    private function yelp_request($address) {
+        try {
+            $unsigned_url = "https://api.yelp.com/v3/businesses/" . $address;
+
+            $request_headers = array();
+            $request_headers[] = sprintf('Authorization: Bearer %s', $this->yelp_key);
+
+            $data = $this->client->request("Get", $unsigned_url, [], ["headers" => $request_headers, "withSuccess" => true]);
+            return $data;
+        } catch (Exception $e) {
+            return $e->getMessage();
+        }
+    }
+
     function yelp_search($term, $location) {
 
         try {
             if (!$term) {
                 throw new Exception("Please find term (banks, schools, food and restaurants etc.), this field is required!");
             }
-            $url_params = ['term' => $term, 'location' => $location, "limit" => Config::get('yelp/SEARCH_LIMIT')];
+            $url_params = ['term' => $term, 'location' => $location, "limit" => 20];
             $search_path = "search?" . http_build_query($url_params);
 
             return $this->yelp_request($search_path);
@@ -530,47 +532,52 @@ class ImkServiceProvider {
             return [];
         }
     }
-    
-    function getWiki(){
-        $walkScore = $this->walkScore(Input::get('full_address'), Input::get('location')['lat'], Input::get('location')['lng']);
-        if($walkScore){
-            return json_encode($walkScore);
-        }else{
-            Helper::setHeader(400);
-            return json_encode(["success"=>"false"]);
-        }
-    }
 
-    function getSchools(){
-        $schools = $this->greatSchool(Input::get('full_address'), Input::get('city'), Input::get('state') );
-   
-        if($schools){
-            return json_encode($schools);
-        }else{
-            Helper::setHeader(400);
-            return json_encode(["success"=>"false"]);
-        }
-    }
-
-    function getNearBy(){
-        $nearBy = $this->yelp_search( Input::get('term') , Input::get('full_address') );
-        if($nearBy){
+    function getNearBy() {
+        $nearBy = $this->yelp_search(Input::get('term'), Input::get('full_address'));
+        if ($nearBy) {
             return json_encode($nearBy);
-        }else{
+        } else {
             Helper::setHeader(400);
-            return json_encode(["success"=>"false"]);
+            return json_encode(["success" => "false"]);
         }
     }
 
-    function getWalkScore(){
-        $walkScore = $this->walkScore( Input::get('full_address') , Input::get('lat'), Input::get('lng') );
-        if($walkScore){
-            return ($walkScore);
-        }else{
+    function getWiki() {
+        $walkScore = $this->walkScore(Input::get('full_address'), Input::get('location')['lat'], Input::get('location')['lng']);
+        if ($walkScore) {
+            return json_encode($walkScore);
+        } else {
             Helper::setHeader(400);
-            return json_encode(["success"=>"false"]);
+            return json_encode(["success" => "false"]);
         }
     }
+
+    function getSchools() {
+        try {
+            $schools = $this->greatSchool(Input::get('full_address'), Input::get('city'), Input::get('state'));
+
+            if ($schools) {
+                return json_encode($schools);
+            } else {
+                throw new Exception("Invalid Data");
+            }
+        } catch (Exception $ex) {
+            Helper::setHeader(400);
+            echo json_encode(["success" => "false", "message" => $ex->getMessage()]);
+        }
+    }
+
+    function getWalkScore() {
+        $walkScore = $this->walkScore(Input::get('full_address'), Input::get('location')['lat'], Input::get('location')['lng']);
+        if ($walkScore) {
+            return ($walkScore);
+        } else {
+            Helper::setHeader(400);
+            return json_encode(["success" => "false"]);
+        }
+    }
+
 }
 
 ?>

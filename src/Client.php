@@ -1,14 +1,18 @@
 <?php
+
 namespace TBC\IMK\WEB;
+
 use Exception;
+
 class Client {
+
     private $base_uri = "";
     private $timeout = 30;
 
     function __construct($options) {
         if (isset($options['base_uri']) && is_string($options['base_uri']) && !empty($options['base_uri'])) {
             $this->base_uri = $options['base_uri'];
-        }else {
+        } else {
             throw new Exception("Base URI is required");
         }
         if (isset($options['timeout']) && is_string($options['timeout']) && !empty($options['timeout'])) {
@@ -19,12 +23,15 @@ class Client {
     function request($method = 'get', $url, $params = [], $options = []) {
         try {
             $parsed_url = parse_url($url);
-            if( !isset( $parsed_url['scheme'] ) ){
+            if (!isset($parsed_url['scheme'])) {
                 $url = $this->base_uri . $url;
             }
-            
-            $ch = curl_init( $url );
+
+            $ch = curl_init($url);
             $headers = array();
+            if (isset($options['headers']) && count($options['headers'])) {
+                $headers = array_merge($headers, $options['headers']);
+            }
             $data_string = '';
             if (strtolower($method) == 'post') {
                 if (isset($params['json'])) {
@@ -45,8 +52,11 @@ class Client {
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
             $result = curl_exec($ch);
-            
+
             curl_close($ch);
+
+//            echo $url, print_r( $headers ) , " output => ", print_r($result);
+
             if ($result) {
                 if (isset($options['raw']) && $options['raw'] == true) {
                     return $result;
@@ -72,4 +82,5 @@ class Client {
             return [];
         }
     }
+
 }
