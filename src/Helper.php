@@ -9,6 +9,25 @@ class Helper {
             return $dt->format($formate); // 10/27/2014
         }
     }
+    
+    private static function assets_path(){
+        if( !defined("BASE_URL") ){
+            throw new Exception("Please Define BASE_URL");
+        }
+        return BASE_URL. "/vendor/tbc/imk/src/assets/";
+    }
+
+    public static function getEnqueueScript(){
+        $path = self::assets_path();
+        $enqueue_scripts = [];
+        $enqueue_scripts[] = $path. "scripts/script.js";
+        $scriptStr = "";
+        foreach( $enqueue_scripts as $script ) {
+            $scriptStr.="<script src='$script' ></script>";
+        }
+        return $scriptStr;
+        
+    }
 
     public static function escape($string) {
         if (is_string($string))
