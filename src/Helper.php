@@ -26,7 +26,17 @@ class Helper {
             $scriptStr.="<script src='$script' ></script>";
         }
         return $scriptStr;
-        
+    }
+
+    public static function getEnqueueStyle(){
+        $path = self::assets_path();
+        $enqueue_styles = [];
+        $enqueue_styles[] = $path. "css/style.css";
+        $styleStr = "";
+        foreach( $enqueue_styles as $style ) {
+            $styleStr.="<link rel='stylesheet' href='$style' >";
+        }
+        return $styleStr;
     }
 
     public static function escape($string) {

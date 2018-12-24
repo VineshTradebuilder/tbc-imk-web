@@ -1,0 +1,28 @@
+.nearbyItem {
+    background-color: #fff;
+    border-radius: 2px;
+    margin-bottom: 15px;
+    padding: 10px;
+}
+.nearby-thumb {
+    height: 125px;
+    background-size: cover;
+    width: 125px;
+    float: left;
+}
+.nearby-info {
+    padding-left: 140px;
+}
+.nearby-title {
+    font-size: 19px;
+    margin-bottom: 5px;
+}
+.nearby-description ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+#schools-data td {
+    padding: 10px;
+}
