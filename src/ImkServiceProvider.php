@@ -497,7 +497,7 @@ class ImkServiceProvider {
             }
 
             $mediaUrl = "api/v1/market-reports/" . $this->user . "/" . $this->group . $queryStr;
-            return $this->client->request('GET', $mediaUrl, [], ['withSuccess' => true]);
+            return $this->client->request('GET', $mediaUrl);
         } catch (Exception $e) {
             return [];
         }
