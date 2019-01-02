@@ -143,7 +143,7 @@ class ImkServiceProvider {
         $data['type'] = 'photo';
 
         if( count( $params ) ) {
-        	$result = array_merge($data, $params);
+        	$data = array_merge($data, $params);
         }
 
         return $this->client->request('POST', 'api/getFeaturedProperties', ['form_params' => $data]);
