@@ -137,10 +137,14 @@ class ImkServiceProvider {
         return $this->client->request('GET', "api/v1/post/" . $postId . "/" . $this->api_user . "/" . $this->api_group);
     }
 
-    function getFeaturedProperties() {
+    function getFeaturedProperties( $params = [] ) {
         $data['orgId'] = $this->api_group;
         $data['userId'] = $this->api_user;
         $data['type'] = 'photo';
+
+        if( count( $params ) ) {
+        	$result = array_merge($data, $params);
+        }
 
         return $this->client->request('POST', 'api/getFeaturedProperties', ['form_params' => $data]);
     }
